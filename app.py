@@ -1,7 +1,7 @@
 import streamlit as st
-import google.generativeai as genai
+import urllib.request
+import json
 
-# Page Configuration
 st.set_page_config(
     page_title="Autonomous Travel Desk",
     page_icon="🗺️",
@@ -9,11 +9,11 @@ st.set_page_config(
 )
 
 st.title("Autonomous Travel Desk")
-st.caption("True Multi-Agent Architecture powered by Gemini LLM: Profiler ➔ Logistics Engine ➔ Curator Agent ➔ Risk Mitigation Desk")
+st.caption("True Multi-Agent Architecture powered by Gemini REST API: Profiler ➔ Logistics Engine ➔ Curator Agent ➔ Risk Mitigation Desk")
 
-# Configure API Key securely from Streamlit Secrets
+# Check for API Key in Streamlit Secrets
 if "GEMINI_API_KEY" in st.secrets:
-    genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
+    API_KEY = st.secrets["GEMINI_API_KEY"]
 else:
     st.error("⚠️ GEMINI_API_KEY not found in Streamlit Secrets. Please add it to your app settings.")
 
@@ -43,7 +43,6 @@ with col_output:
     st.subheader("Autonomous Agent Execution & Live Itinerary")
     
     if run_button and "GEMINI_API_KEY" in st.secrets:
-        # Collect style preferences
         styles = []
         if style_culture: styles.append("Cultural & Heritage")
         if style_culinary: styles.append("Local Culinary Focus")
@@ -57,7 +56,6 @@ with col_output:
             st.write(f"🏛️ **Curator Agent:** Sourcing hyper-local experiences matching focus: {', '.join(styles)}...")
             st.write("🛡️ **Risk & Contingency Agent:** Evaluating local weather variations, crowd metrics, and logistical failure points...")
             
-            # Construct prompt for real AI agent reasoning
             prompt = f"""
             You are an advanced multi-agent travel coordination system comprising a Profiler, Logistics Engine, Curator, and Risk Agent.
             Create a structured travel plan for a trip from Hyderabad to {destination}.
@@ -68,24 +66,32 @@ with col_output:
             
             Provide your response in exactly three distinct sections separated by '---':
             1. ARBITRAGE: Give a brief financial arbitrage summary (Estimated Cost vs Standard, Transit Efficiency score, Experience Match score).
-            2. ITINERARY: Give a structured 2-day day-by-day itinerary (Day 1: Transit & Arrival, Day 2: Deep Dive based on focus styles) with realistic timings.
+            2. ITINERARY: Give a structured day-by-day itinerary (Day 1: Transit & Arrival, Day 2: Deep Dive based on focus styles) with realistic timings.
             3. RISK: Give a Risk Agent stress test report assessing weather, seasonality, and backup alternative plans.
             """
             
+            # Direct REST API call to Gemini (No external pip package required)
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={API_KEY}"
+            payload = {
+                "contents": [{"parts": [{"text": prompt}]}]
+            }
+            
+            agent_output = None
             try:
-                # Call Gemini model
-                model = genai.GenerativeModel("gemini-1.5-flash")
-                response = model.generate_content(prompt)
-                agent_output = response.text
-                status_box.update(label="Agent Mesh Execution Complete!", state="complete", expanded=False)
+                req = urllib.request.Request(
+                    url, 
+                    data=json.dumps(payload).encode('utf-8'),
+                    headers={'Content-Type': 'application/json'}
+                )
+                with urllib.request.urlopen(req) as response:
+                    res_data = json.loads(response.read().decode('utf-8'))
+                    agent_output = res_data['candidates'][0]['content']['parts'][0]['text']
+                    status_box.update(label="Agent Mesh Execution Complete!", state="complete", expanded=False)
             except Exception as e:
-                st.error(f"Agent execution error: {e}")
-                agent_output = None
+                st.error(f"Agent API execution error: {e}")
 
         if agent_output:
-            # Parse sections roughly
             sections = agent_output.split("---")
-            
             if len(sections) >= 3:
                 st.markdown("### 📊 Agent Cost & Value Arbitrage Analysis")
                 st.markdown(sections[0].strip())
