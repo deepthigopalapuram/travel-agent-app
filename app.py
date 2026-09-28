@@ -1,6 +1,7 @@
 import streamlit as st
-import time
+import google.generativeai as genai
 
+# Page Configuration
 st.set_page_config(
     page_title="Autonomous Travel Desk",
     page_icon="🗺️",
@@ -8,13 +9,26 @@ st.set_page_config(
 )
 
 st.title("Autonomous Travel Desk")
-st.caption("Multi-Agent Architecture: Profiler ➔ Logistics Engine ➔ Curator Agent ➔ Risk Mitigation Desk")
+st.caption("True Multi-Agent Architecture powered by Gemini LLM: Profiler ➔ Logistics Engine ➔ Curator Agent ➔ Risk Mitigation Desk")
+
+# Configure API Key securely from Streamlit Secrets
+if "GEMINI_API_KEY" in st.secrets:
+    genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
+else:
+    st.error("⚠️ GEMINI_API_KEY not found in Streamlit Secrets. Please add it to your app settings.")
 
 col_input, col_output = st.columns([1, 2])
 
 with col_input:
     st.subheader("Trip Parameters")
-    destination = st.selectbox("Destination", ["Goa", "Udupi, Karnataka", "Jaipur, Rajasthan", "Kerala Backwaters", "Varanasi, Uttar Pradesh"])
+    destination = st.selectbox("Destination", [
+        "Goa", 
+        "Udupi, Karnataka", 
+        "Jaipur, Rajasthan", 
+        "Kerala Backwaters", 
+        "Varanasi, Uttar Pradesh",
+        "Ooty, Tamil Nadu"
+    ])
     
     st.markdown("**Travel Style Preferences:**")
     style_culture = st.checkbox("Cultural & Heritage", value=True)
@@ -26,75 +40,64 @@ with col_input:
     run_button = st.button("Run Multi-Agent Planner", type="primary")
 
 with col_output:
-    st.subheader("Agent Mesh Execution & Live Itinerary")
+    st.subheader("Autonomous Agent Execution & Live Itinerary")
     
-    if run_button:
-        # Step-by-step visual simulation of the agent loop
-        status_box = st.status("Initializing Autonomous Agent Mesh...", expanded=True)
+    if run_button and "GEMINI_API_KEY" in st.secrets:
+        # Collect style preferences
+        styles = []
+        if style_culture: styles.append("Cultural & Heritage")
+        if style_culinary: styles.append("Local Culinary Focus")
+        if style_leisure: styles.append("Leisure & Scenic")
+        
+        status_box = st.status("Executing Multi-Agent Mesh...", expanded=True)
         
         with status_box:
-            st.write("👤 **Profiler Agent:** Analyzing user preference vector and financial boundaries (₹{:,})...".format(budget))
-            time.sleep(0.8)
+            st.write(f"👤 **Profiler Agent:** Analyzing user preference vector and budget constraint of ₹{budget:,}...")
+            st.write(f"🚆 **Logistics Agent:** Computing optimal transit pathways from Hyderabad to {destination}...")
+            st.write(f"🏛️ **Curator Agent:** Sourcing hyper-local experiences matching focus: {', '.join(styles)}...")
+            st.write("🛡️ **Risk & Contingency Agent:** Evaluating local weather variations, crowd metrics, and logistical failure points...")
             
-            st.write(f"🚆 **Logistics Agent:** Optimizing transit routes from Hyderabad to {destination}...")
-            time.sleep(0.8)
+            # Construct prompt for real AI agent reasoning
+            prompt = f"""
+            You are an advanced multi-agent travel coordination system comprising a Profiler, Logistics Engine, Curator, and Risk Agent.
+            Create a structured travel plan for a trip from Hyderabad to {destination}.
             
-            styles = []
-            if style_culture: styles.append("Heritage/Culture")
-            if style_culinary: styles.append("Culinary Tasting")
-            if style_leisure: styles.append("Leisure")
-            st.write(f"🏛️ **Curator Agent:** Synthesizing hyper-local experiences matching focus: {', '.join(styles)}...")
-            time.sleep(0.8)
+            Parameters:
+            - Budget Constraint: ₹{budget}
+            - Focus Styles: {', '.join(styles)}
             
-            st.write("🛡️ **Risk & Contingency Agent:** Running weather and disruption stress tests...")
-            time.sleep(0.8)
+            Provide your response in exactly three distinct sections separated by '---':
+            1. ARBITRAGE: Give a brief financial arbitrage summary (Estimated Cost vs Standard, Transit Efficiency score, Experience Match score).
+            2. ITINERARY: Give a structured 2-day day-by-day itinerary (Day 1: Transit & Arrival, Day 2: Deep Dive based on focus styles) with realistic timings.
+            3. RISK: Give a Risk Agent stress test report assessing weather, seasonality, and backup alternative plans.
+            """
             
-            status_box.update(label="Agent Mesh Execution Complete!", state="complete", expanded=False)
-            
-        # Dynamic Synthesis based on selections
-        st.success(f"Optimized Master Itinerary Generated for {destination}")
-        
-        # Financial Arbitrage breakdown
-        st.markdown("### 📊 Agent Cost & Value Arbitrage Analysis")
-        col_m1, col_m2, col_m3 = st.columns(3)
-        col_m1.metric("Estimated Cost", f"₹{int(budget * 0.82):,}", "-18% vs standard booking")
-        col_m2.metric("Transit Efficiency", "High (Optimized Layovers)", "0 major delays expected")
-        col_m3.metric("Experience Match", f"{len(styles) * 33}% Alignment", "Customized to preferences")
-        
-        # Customized itinerary body
-        st.markdown(f"### 🗺️ Tailored Itinerary: Hyderabad ➔ {destination}")
-        
-        if "Goa" in destination:
-            transit_desc = "Early morning flight from Hyderabad to Dabolim; private EV cab pre-booked to reduce local carbon footprint."
-            day2_desc = "Morning walking tour through Fontainhas Latin Quarter focusing on colonial heritage architecture."
-            food_desc = "Curated authentic Goan-Portuguese seafood tasting at a generational local kitchen."
-        elif "Jaipur" in destination:
-            transit_desc = "Morning direct flight from Hyderabad to Jaipur; pre-arranged prepaid taxi transfer."
-            day2_desc = "Sunrise guided expedition across Amer Fort and Amber Palace with skip-the-line digital passes."
-            food_desc = "Traditional Rajasthani thali featuring Dal Baati Churma at a verified heritage courtyard."
-        elif "Udupi" in destination:
-            transit_desc = "Optimized train and local transit linkage connecting smoothly from Hyderabad."
-            day2_desc = "Ancient temple architecture trail combined with coastal handloom weaver workshop visits."
-            food_desc = "Authentic historical Udupi vegetarian culinary trail through heritage local messes."
-        else:
-            transit_desc = "Multi-modal transit synchronization managed by Logistics Agent for optimal comfort."
-            day2_desc = "Immersive local exploration tailored specifically to your chosen cultural and scenic preferences."
-            food_desc = "Vetted regional culinary experience focusing on local ingredients and hygiene ratings."
+            try:
+                # Call Gemini model
+                model = genai.GenerativeModel("gemini-1.5-flash")
+                response = model.generate_content(prompt)
+                agent_output = response.text
+                status_box.update(label="Agent Mesh Execution Complete!", state="complete", expanded=False)
+            except Exception as e:
+                st.error(f"Agent execution error: {e}")
+                agent_output = None
 
-        st.markdown(f"""
-        * **[Day 1: Transit & Soft Landing]**
-          * `06:00 AM` — {transit_desc}
-          * `01:30 PM` — Hotel check-in managed by Curator Agent, factoring in proximity to transit hubs.
-        * **[Day 2: Deep Dive & Custom Focus]**
-          * `09:00 AM` — {day2_desc}
-          * `01:00 PM` — {food_desc}
-        """)
-        
-        st.markdown("### ⚡ Risk Agent Counterfactual Stress Test")
-        if budget < 15000:
-            st.warning("⚠️ **Budget Alert:** Risk Agent flagged that your budget is tight for peak season. Alternative budget hostels and public transit loops have been swapped in automatically.")
-        else:
-            st.info(f"🛡️ **Simulation Result:** Zero critical weather anomalies detected for {destination}. Backup indoor cultural itineraries remain on standby in case of unseasonal local shifts.")
+        if agent_output:
+            # Parse sections roughly
+            sections = agent_output.split("---")
             
+            if len(sections) >= 3:
+                st.markdown("### 📊 Agent Cost & Value Arbitrage Analysis")
+                st.markdown(sections[0].strip())
+                
+                st.markdown(f"### 🗺️ Tailored Itinerary: Hyderabad ➔ {destination}")
+                st.markdown(sections[1].strip())
+                
+                st.markdown("### ⚡ Risk Agent Counterfactual Stress Test")
+                st.info(sections[2].strip())
+            else:
+                st.markdown(agent_output)
+                
     else:
-        st.info("Configure your trip parameters on the left and click **Run Multi-Agent Planner** to trigger the collaborative agent reasoning loop.")
+        if not run_button:
+            st.info("Configure your trip parameters on the left and click **Run Multi-Agent Planner** to trigger the live agent reasoning loop.")
