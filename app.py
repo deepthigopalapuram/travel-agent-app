@@ -9,7 +9,7 @@ st.set_page_config(
 )
 
 st.title("Autonomous Travel Desk")
-st.caption("True Multi-Agent Architecture powered by Gemini REST API: Profiler ➔ Logistics Engine ➔ Curator Agent ➔ Risk Mitigation Desk")
+st.caption("True Multi-Agent Architecture powered by Gemini API: Profiler ➔ Logistics Engine ➔ Curator Agent ➔ Risk Mitigation Desk")
 
 # Check for API Key in Streamlit Secrets
 if "GEMINI_API_KEY" in st.secrets:
@@ -70,10 +70,11 @@ with col_output:
             3. RISK: Give a Risk Agent stress test report assessing weather, seasonality, and backup alternative plans.
             """
             
-            # Direct REST API call to Gemini (No external pip package required)
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={API_KEY}"
+            # Using the modern Interactions API endpoint with the current gemini-3.8-flash model
+            url = f"https://generativelanguage.googleapis.com/v1beta/interactions?key={API_KEY}"
             payload = {
-                "contents": [{"parts": [{"text": prompt}]}]
+                "model": "gemini-3.8-flash",
+                "input": prompt
             }
             
             agent_output = None
@@ -85,7 +86,11 @@ with col_output:
                 )
                 with urllib.request.urlopen(req) as response:
                     res_data = json.loads(response.read().decode('utf-8'))
-                    agent_output = res_data['candidates'][0]['content']['parts'][0]['text']
+                    # Extract output from Interactions API response schema
+                    agent_output = res_data.get('interaction', {}).get('outputText', '')
+                    if not agent_output:
+                        # Fallback parsing if structure differs slightly
+                        agent_output = res_data.get('outputText', str(res_data))
                     status_box.update(label="Agent Mesh Execution Complete!", state="complete", expanded=False)
             except Exception as e:
                 st.error(f"Agent API execution error: {e}")
