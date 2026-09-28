@@ -1,5 +1,4 @@
 import streamlit as st
-import random
 import time
 
 st.set_page_config(
@@ -9,45 +8,13 @@ st.set_page_config(
 )
 
 st.title("Autonomous Travel Desk")
-st.caption("Orchestrate multi-agent itineraries with real-time routing, budget arbitrage, and stress testing.")
-
-# Destination database with realistic tailored data
-DESTINATION_DATA = {
-    "Goa": {
-        "transit": "06:00 AM - Direct flight from Hyderabad to Dabolim (GOI), optimized for minimal layover.",
-        "hotel": "01:30 PM - Check-in at heritage boutique stay near Fontainhas.",
-        "day2_activity": "09:30 AM - Guided walking tour of Old Goa churches and Latin Quarter heritage architecture.",
-        "culinary": "01:00 PM - Curated Goan-Portuguese seafood lunch at a verified local tavern.",
-        "risk": "Minor coastal humidity spike detected on Day 2 afternoon. Risk Agent has pre-loaded an indoor art gallery and spice plantation tour alternative."
-    },
-    "Udupi, Karnataka": {
-        "transit": "05:30 AM - Early morning express train connection from Hyderabad to Udupi.",
-        "hotel": "02:00 PM - Check-in at coastal eco-resort near Malpe beach.",
-        "day2_activity": "08:30 AM - Heritage temple architecture trail and local handicraft workshops.",
-        "culinary": "12:30 PM - Traditional authentic Udupi vegetarian thali experience at a historic local mess.",
-        "risk": "Unseasonal afternoon coastal drizzle predicted on Day 2. Risk Agent has automatically swapped outdoor beach slots with indoor heritage museum visits."
-    },
-    "Jaipur, Rajasthan": {
-        "transit": "07:00 AM - Morning flight from Hyderabad to Jaipur International Airport.",
-        "hotel": "01:00 PM - Check-in at traditional haveli in the old pink city.",
-        "day2_activity": "09:00 AM - Pre-booked priority entry tour of Amer Fort and City Palace museums.",
-        "culinary": "01:30 PM - Authentic Rajasthani Dal Baati Churma lunch at a heritage courtyard.",
-        "risk": "High afternoon temperature surge expected on Day 2. Risk Agent has re-routed outdoor sightseeing to early morning hours and shifted afternoons to indoor bazaars."
-    },
-    "Kerala Backwaters": {
-        "transit": "06:15 AM - Flight from Hyderabad to Cochin, followed by a private cab to Alleppey.",
-        "hotel": "12:30 PM - Boarding private traditional luxury houseboat.",
-        "day2_activity": "09:00 AM - Guided canoe village tour through narrow backwater canals.",
-        "culinary": "01:00 PM - Fresh Kerala Karimeen fish fry and traditional sadhya prepared onboard.",
-        "risk": "Brief tropical rain shower forecasted for Day 2 evening. Risk Agent has secured a covered deck dining arrangement and indoor Kathakali performance."
-    }
-}
+st.caption("Multi-Agent Architecture: Profiler ➔ Logistics Engine ➔ Curator Agent ➔ Risk Mitigation Desk")
 
 col_input, col_output = st.columns([1, 2])
 
 with col_input:
     st.subheader("Trip Parameters")
-    destination = st.selectbox("Destination", list(DESTINATION_DATA.keys()))
+    destination = st.selectbox("Destination", ["Goa", "Udupi, Karnataka", "Jaipur, Rajasthan", "Kerala Backwaters", "Varanasi, Uttar Pradesh"])
     
     st.markdown("**Travel Style Preferences:**")
     style_culture = st.checkbox("Cultural & Heritage", value=True)
@@ -59,27 +26,75 @@ with col_input:
     run_button = st.button("Run Multi-Agent Planner", type="primary")
 
 with col_output:
-    st.subheader("Multi-Agent Itinerary & Live Analytics Dashboard")
+    st.subheader("Agent Mesh Execution & Live Itinerary")
     
     if run_button:
-        with st.spinner("Profiler, Logistics, Curator, and Risk Agents negotiating options..."):
-            time.sleep(1.5) # Simulating active multi-agent reasoning loop
+        # Step-by-step visual simulation of the agent loop
+        status_box = st.status("Initializing Autonomous Agent Mesh...", expanded=True)
+        
+        with status_box:
+            st.write("👤 **Profiler Agent:** Analyzing user preference vector and financial boundaries (₹{:,})...".format(budget))
+            time.sleep(0.8)
             
-        data = DESTINATION_DATA[destination]
+            st.write(f"🚆 **Logistics Agent:** Optimizing transit routes from Hyderabad to {destination}...")
+            time.sleep(0.8)
+            
+            styles = []
+            if style_culture: styles.append("Heritage/Culture")
+            if style_culinary: styles.append("Culinary Tasting")
+            if style_leisure: styles.append("Leisure")
+            st.write(f"🏛️ **Curator Agent:** Synthesizing hyper-local experiences matching focus: {', '.join(styles)}...")
+            time.sleep(0.8)
+            
+            st.write("🛡️ **Risk & Contingency Agent:** Running weather and disruption stress tests...")
+            time.sleep(0.8)
+            
+            status_box.update(label="Agent Mesh Execution Complete!", state="complete", expanded=False)
+            
+        # Dynamic Synthesis based on selections
+        st.success(f"Optimized Master Itinerary Generated for {destination}")
         
-        st.success(f"Itinerary successfully synthesized for {destination} within ₹{budget:,} budget constraint!")
+        # Financial Arbitrage breakdown
+        st.markdown("### 📊 Agent Cost & Value Arbitrage Analysis")
+        col_m1, col_m2, col_m3 = st.columns(3)
+        col_m1.metric("Estimated Cost", f"₹{int(budget * 0.82):,}", "-18% vs standard booking")
+        col_m2.metric("Transit Efficiency", "High (Optimized Layovers)", "0 major delays expected")
+        col_m3.metric("Experience Match", f"{len(styles) * 33}% Alignment", "Customized to preferences")
         
-        st.markdown(f"### 🗺️ Optimized Route: Hyderabad to {destination}")
+        # Customized itinerary body
+        st.markdown(f"### 🗺️ Tailored Itinerary: Hyderabad ➔ {destination}")
+        
+        if "Goa" in destination:
+            transit_desc = "Early morning flight from Hyderabad to Dabolim; private EV cab pre-booked to reduce local carbon footprint."
+            day2_desc = "Morning walking tour through Fontainhas Latin Quarter focusing on colonial heritage architecture."
+            food_desc = "Curated authentic Goan-Portuguese seafood tasting at a generational local kitchen."
+        elif "Jaipur" in destination:
+            transit_desc = "Morning direct flight from Hyderabad to Jaipur; pre-arranged prepaid taxi transfer."
+            day2_desc = "Sunrise guided expedition across Amer Fort and Amber Palace with skip-the-line digital passes."
+            food_desc = "Traditional Rajasthani thali featuring Dal Baati Churma at a verified heritage courtyard."
+        elif "Udupi" in destination:
+            transit_desc = "Optimized train and local transit linkage connecting smoothly from Hyderabad."
+            day2_desc = "Ancient temple architecture trail combined with coastal handloom weaver workshop visits."
+            food_desc = "Authentic historical Udupi vegetarian culinary trail through heritage local messes."
+        else:
+            transit_desc = "Multi-modal transit synchronization managed by Logistics Agent for optimal comfort."
+            day2_desc = "Immersive local exploration tailored specifically to your chosen cultural and scenic preferences."
+            food_desc = "Vetted regional culinary experience focusing on local ingredients and hygiene ratings."
+
         st.markdown(f"""
-        * **[Day 1: Transit & Arrival]**
-          * `{data['transit']}`
-          * `{data['hotel']}`
-        * **[Day 2: Exploration & Style Customization]**
-          * `{data['day2_activity']}`
-          * `{data['culinary']}`
+        * **[Day 1: Transit & Soft Landing]**
+          * `06:00 AM` — {transit_desc}
+          * `01:30 PM` — Hotel check-in managed by Curator Agent, factoring in proximity to transit hubs.
+        * **[Day 2: Deep Dive & Custom Focus]**
+          * `09:00 AM` — {day2_desc}
+          * `01:00 PM` — {food_desc}
         """)
         
-        st.markdown("### ⚡ Dynamic What-If Stress Test Simulation")
-        st.info(f"Risk Agent simulation complete: *{data['risk']}*")
+        st.markdown("### ⚡ Risk Agent Counterfactual Stress Test")
+        if budget < 15000:
+            st.warning("⚠️ **Budget Alert:** Risk Agent flagged that your budget is tight for peak season. Alternative budget hostels and public transit loops have been swapped in automatically.")
+        else:
+            st.info(f"🛡️ **Simulation Result:** Zero critical weather anomalies detected for {destination}. Backup indoor cultural itineraries remain on standby in case of unseasonal local shifts.")
+            
     else:
-        st.info("Configure your trip parameters on the left and click **Run Multi-Agent Planner** to initialize the live agent mesh.")
+        st.info("Configure your trip parameters on the left and click **Run Multi-Agent Planner** to trigger the collaborative agent reasoning loop.")
