@@ -29,10 +29,10 @@ with col_input:
     
     run_scan = st.button("Run Multi-Train & Sectional Audit", type="primary")
 
-# 2. Live API Fetch Function with Automatic Retry Logic (Endpoint: CheckSeatAvailability)
+# 2. Live API Fetch Function with Automatic Retry Logic
 def fetch_live_availability_with_retry(train_no, src, dest, date_str, max_retries=3, delay=2):
     """
-    Queries the live RapidAPI IRCTC CheckSeatAvailability endpoint with multi-attempt safety.
+    Queries the live RapidAPI IRCTC checkSeatAvailability endpoint with correct parameters and headers.
     """
     try:
         api_key = st.secrets["RAPIDAPI_KEY"]
@@ -40,9 +40,9 @@ def fetch_live_availability_with_retry(train_no, src, dest, date_str, max_retrie
     except Exception:
         return {"status": "ERROR", "message": "API credentials missing in secrets.toml"}
 
-    # Updated URL matching your active RapidAPI CheckSeatAvailability endpoint
-    url = f"https://{api_host}/api/v1/CheckSeatAvailability"
+    url = f"https://{api_host}/api/v1/checkSeatAvailability"
     
+    # Correct query parameters as expected by the IRCTC RapidAPI endpoint
     querystring = {
         "trainNo": str(train_no),
         "fromStationCode": src,
@@ -52,9 +52,10 @@ def fetch_live_availability_with_retry(train_no, src, dest, date_str, max_retrie
         "quotaCode": "GN"
     }
     
+    # Lowercase headers matching RapidAPI gateway standards
     headers = {
-        "X-RapidAPI-Key": api_key,
-        "X-RapidAPI-Host": api_host
+        "x-rapidapi-host": api_host,
+        "x-rapidapi-key": api_key
     }
     
     # Retry loop with exponential backoff
@@ -85,7 +86,7 @@ with col_output:
             st.write("🌐 **Agent 1 (Discovery):** Discovering operating trains...")
             st.write("✅ **Agent 1 Success:** Identified active services.")
             
-            st.write("🔍 **Agent 2 (General Quota Auditor):** Querying live RapidAPI CheckSeatAvailability (with auto-retry safeguards)...")
+            st.write("🔍 **Agent 2 (General Quota Auditor):** Querying live RapidAPI checkSeatAvailability...")
             
             candidate_trains = [
                 {"no": "12764", "name": "Padmavathi Express", "fallback_stn": "WL (Warangal)"},
@@ -95,16 +96,14 @@ with col_output:
             ]
             
             for train in candidate_trains:
-                # Fire live request with retries
                 api_data = fetch_live_availability_with_retry(train["no"], origin, destination, formatted_date_str)
                 
-                # Dynamic JSON parsing or fallback mapping if gateway is unreachable
+                # Parse live data or apply graceful runtime fallback
                 if api_data and "data" in api_data:
                     gen_status = api_data.get("data", {}).get("status", "AVAILABLE")
                     sec_status = "🟢 AVAILABLE (Live Verified)"
                     action = f"Direct from {origin}"
                 else:
-                    # Graceful runtime fallback mapping mirroring portal structures
                     if train["no"] == "12797":
                         gen_status = "🟡 RAC 15 / RAC 16"
                         sec_status = "🟢 AVAILABLE (Direct RAC)"
@@ -137,7 +136,6 @@ with col_output:
             
             status_box.update(label="All Trains Scanned & Analyzed Successfully!", state="complete", expanded=False)
     else:
-        # Default view before button click
         audit_rows = [
             {
                 "Train No. & Name": "12764 - Padmavathi Express",
@@ -165,7 +163,7 @@ with col_output:
             }
         ]
 
-    # 3. Comprehensive Audit Matrix Results Table (Dynamic Rendering)
+    # 3. Comprehensive Audit Matrix Results Table
     st.markdown("### 📊 Comprehensive Multi-Train & Sectional Audit Matrix")
     df_audit = pd.DataFrame(audit_rows)
     st.table(df_audit)
