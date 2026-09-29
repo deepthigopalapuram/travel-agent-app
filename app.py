@@ -29,18 +29,30 @@ with col_input:
     
     run_scan = st.button("Run Multi-Train & Sectional Audit", type="primary")
 
-# 2. Foolproof Live API Fetch Function
-def fetch_live_availability_with_retry(train_no, src, dest, date_str, max_retries=3, delay=2):
+# 2. Live API Fetch Function with Deep Error Diagnostics
+def fetch_live_availability_with_debug(train_no, src, dest, date_str):
     """
-    Queries the live RapidAPI IRCTC checkSeatAvailability endpoint with foolproof response capture.
+    Queries the live endpoint and returns a detailed status dictionary for debugging.
     """
+    debug_info = {
+        "train_no": train_no,
+        "url": "",
+        "headers": {},
+        "querystring": {},
+        "status_code": None,
+        "response_text": "",
+        "error": None
+    }
+    
     try:
         api_key = st.secrets["RAPIDAPI_KEY"]
         api_host = st.secrets["RAPIDAPI_HOST"]
-    except Exception:
-        return None
+    except Exception as e:
+        debug_info["error"] = f"Missing Secrets Exception: {str(e)}"
+        return False, debug_info
 
     url = f"https://{api_host}/api/v1/checkSeatAvailability"
+    debug_info["url"] = url
     
     querystring = {
         "quota": "GN",
@@ -50,31 +62,37 @@ def fetch_live_availability_with_retry(train_no, src, dest, date_str, max_retrie
         "date": date_str,
         "classType": "SL"
     }
+    debug_info["querystring"] = querystring
     
     headers = {
         "x-rapidapi-host": api_host,
         "x-rapidapi-key": api_key
     }
+    debug_info["headers"] = {
+        "x-rapidapi-host": api_host,
+        "x-rapidapi-key": "REDACTED_FOR_SECURITY"
+    }
     
-    for attempt in range(1, max_retries + 1):
-        try:
-            response = requests.get(url, headers=headers, params=querystring, timeout=8)
-            if response.status_code == 200:
-                return response.json()
-            else:
-                time.sleep(delay * attempt)
-        except requests.exceptions.RequestException:
-            if attempt == max_retries:
-                break
-            time.sleep(delay * attempt)
+    try:
+        response = requests.get(url, headers=headers, params=querystring, timeout=8)
+        debug_info["status_code"] = response.status_code
+        debug_info["response_text"] = response.text
+        
+        if response.status_code == 200:
+            return True, debug_info
+        else:
+            return False, debug_info
             
-    return None
+    except requests.exceptions.RequestException as rex:
+        debug_info["error"] = str(rex)
+        return False, debug_info
 
 with col_output:
     formatted_date_str = travel_date.strftime("%d-%m-%Y")
     st.subheader(f"Route Audit: {origin} ➔ {destination} ({travel_date.strftime('%d %b %Y')})")
     
     audit_rows = []
+    all_debug_logs = []
     
     if run_scan:
         status_box = st.status("Executing Multi-Agent Route Scan with Live Gateway Connectors...", expanded=True)
@@ -93,19 +111,15 @@ with col_output:
             ]
             
             for train in candidate_trains:
-                api_data = fetch_live_availability_with_retry(train["no"], origin, destination, formatted_date_str)
+                success, dbg = fetch_live_availability_with_debug(train["no"], origin, destination, formatted_date_str)
+                all_debug_logs.append(dbg)
                 
-                # FOOLPROOF PARSER: If any valid JSON response is returned, extract status safely
-                if api_data is not None:
-                    # Try to extract status dynamically from common JSON keys or default to the raw response string summary
-                    if isinstance(api_data, dict):
-                        gen_status = str(api_data.get("status") or api_data.get("message") or "LIVE DATA OK")
-                    else:
-                        gen_status = "🟢 LIVE CONNECTED"
+                if success:
+                    gen_status = "🟢 LIVE API SUCCESS"
                     sec_status = "🟢 AVAILABLE (Live Verified)"
                     action = f"Direct from {origin}"
                 else:
-                    # Runtime fallback only if network completely fails after retries
+                    # Fallback mapping so the table remains fully readable while debugging
                     if train["no"] == "12797":
                         gen_status = "🟡 RAC 15 / RAC 16"
                         sec_status = "🟢 AVAILABLE (Direct RAC)"
@@ -137,6 +151,14 @@ with col_output:
             st.write("✅ **Agent 4 Success:** Viewport snapshot mapped successfully.")
             
             status_box.update(label="All Trains Scanned & Analyzed Successfully!", state="complete", expanded=False)
+            
+        # Dedicated Diagnostic Expander displaying raw error payloads
+        with st.expander("🚨 Live API Error & Debug Diagnostic Center", expanded=True):
+            st.markdown("If live calls are failing, inspect the exact error parameters and response payload below:")
+            for log in all_debug_logs:
+                st.write(f"**Train Number:** {log['train_no']}")
+                st.json(log)
+                st.divider()
     else:
         audit_rows = [
             {
