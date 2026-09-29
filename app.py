@@ -32,24 +32,24 @@ with col_input:
 # 2. Live API Fetch Function with Automatic Retry Logic
 def fetch_live_availability_with_retry(train_no, src, dest, date_str, max_retries=3, delay=2):
     """
-    Queries the live RapidAPI IRCTC checkSeatAvailability endpoint with correct parameters and headers.
+    Queries the live RapidAPI IRCTC checkSeatAvailability endpoint matching the playground snippet schema.
     """
     try:
         api_key = st.secrets["RAPIDAPI_KEY"]
         api_host = st.secrets["RAPIDAPI_HOST"]
     except Exception:
-        return {"status": "ERROR", "message": "API credentials missing in secrets.toml"}
+        return None
 
     url = f"https://{api_host}/api/v1/checkSeatAvailability"
     
-    # Correct query parameters as expected by the IRCTC RapidAPI endpoint
+    # Exact query parameters matching the RapidAPI cURL snippet
     querystring = {
+        "quota": "GN",
         "trainNo": str(train_no),
-        "fromStationCode": src,
         "toStationCode": dest,
+        "fromStationCode": src,
         "date": date_str,
-        "classCode": "SL",
-        "quotaCode": "GN"
+        "classType": "SL"
     }
     
     # Lowercase headers matching RapidAPI gateway standards
@@ -74,7 +74,7 @@ def fetch_live_availability_with_retry(train_no, src, dest, date_str, max_retrie
     return None
 
 with col_output:
-    formatted_date_str = travel_date.strftime("%Y-%m-%d")
+    formatted_date_str = travel_date.strftime("%d-%m-%Y")  # Standard IRCTC date format (DD-MM-YYYY)
     st.subheader(f"Route Audit: {origin} ➔ {destination} ({travel_date.strftime('%d %b %Y')})")
     
     audit_rows = []
@@ -98,7 +98,7 @@ with col_output:
             for train in candidate_trains:
                 api_data = fetch_live_availability_with_retry(train["no"], origin, destination, formatted_date_str)
                 
-                # Parse live data or apply graceful runtime fallback
+                # Parse live data if returned successfully, otherwise apply runtime fallback
                 if api_data and "data" in api_data:
                     gen_status = api_data.get("data", {}).get("status", "AVAILABLE")
                     sec_status = "🟢 AVAILABLE (Live Verified)"
