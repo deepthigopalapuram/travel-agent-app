@@ -28,7 +28,6 @@ with col_input:
         "Varanasi, Uttar Pradesh"
     ])
     
-    # Added Date Picker for exact travel scheduling
     travel_date = st.date_input(
         "Target Travel Date", 
         value=datetime.now() + timedelta(days=1),
@@ -47,11 +46,11 @@ with col_output:
         agent_output = None
         with status_box:
             st.write(f"👤 **Profiler Agent:** Analyzing budget (₹{budget:,}) for travel on {travel_date}...")
-            st.write(f"🚆 **Logistics Agent:** Scanning Tatkal, RAC, and AC bus corridors from {origin} to {destination}...")
+            st.write(f"🚆 **Logistics Agent:** Scanning Remote Quotas and AC bus corridors from {origin} to {destination}...")
             
             prompt = f"""
             You are an advanced last-minute travel coordination system. Provide a structured emergency travel plan from {origin} to {destination} for date {travel_date} under a ₹{budget} budget constraint. 
-            CRITICAL CONSTRAINT: Do NOT suggest unreserved general compartments. Focus strictly on Tatkal, RAC clearance tracking, or guaranteed sleeper bus alternatives.
+            CRITICAL CONSTRAINT: Do NOT suggest unreserved general compartments. Focus strictly on remote quotas, RAC clearance tracking, or guaranteed sleeper bus alternatives.
             
             Provide your response in exactly two sections separated by '---':
             1. CORRIDORS: Provide a table of alternative routing options using reserved seats only.
@@ -76,64 +75,63 @@ with col_output:
                 status_box.update(label="API Rate Limited - Switching to Guaranteed Reserved Fallback", state="complete", expanded=False)
                 agent_output = None
 
-        # Fallback Algorithmic Output focusing strictly on COMFORTABLE/RESERVED options (No Unreserved)
         if not agent_output:
-            st.warning("⚠️ High traffic on public LLM endpoints. Reserved-Only Algorithmic Matcher Activated.")
+            st.warning("⚠️ High traffic on public LLM endpoints. Granular Remote-Quota Matcher Activated.")
             
             if destination == "Tirupati":
                 routes_data = [
                     {
-                        "Strategy": "Direct Train (Tatkal / Premium Tatkal)",
-                        "Path": f"Secunderabad/Kacheguda Direct to Tirupati (10:00 AM Booking Window)",
-                        "Status": "🟡 High Demand / Tatkal Open",
+                        "Strategy": "Direct Train (Tatkal Quota)",
+                        "Path": f"Secunderabad/Kacheguda Direct to Tirupati [IRCTC Book](https://www.irctc.co.in)",
+                        "Status": "🟡 Tatkal Window Open",
                         "Est. Cost": "₹1,450 (3AC)",
-                        "Action": "Log in to IRCTC at 9:58 AM for AC / 10:58 AM for Sleeper on " + travel_date.strftime('%d %b')
+                        "Action": "Log in to [IRCTC](https://www.irctc.co.in) at 9:58 AM for AC / 10:58 AM for Sleeper."
                     },
                     {
-                        "Strategy": "Junction Quota Split (Renigunta)",
-                        "Path": f"Train No. 17654 (Kacheguda to Renigunta) ➔ Reserved Cab/Bus Final Leg",
-                        "Status": "🟢 Remote Quota Available",
+                        "Strategy": "Remote Quota Split (Renigunta / Puttur)",
+                        "Path": f"Train No. 17654 (Kacheguda to Renigunta Jn [Ixigo Check](https://www.ixigo.com/trains/17654))",
+                        "Status": "🟢 Remote Quota Open",
                         "Est. Cost": "₹1,200",
-                        "Action": "Book quota to Renigunta instead of Tirupati main station for higher seat availability."
+                        "Action": "Book quota to **Renigunta (RU)** or **Puttur (PUT)** instead of Tirupati main terminal for higher seat inventory."
                     },
                     {
                         "Strategy": "Guaranteed AC Sleeper Bus",
-                        "Path": f"TGSRTC / APSRTC / Orange Tours AC Sleeper from MGBS Hyderabad ➔ Tirupati",
-                        "Status": "🟢 Seats Open",
+                        "Path": f"TGSRTC / APSRTC Sleeper from MGBS Hyderabad to Tirupati [AbhiBus/RedBus]",
+                        "Status": "🟢 Confirmed Berths",
                         "Est. Cost": "₹1,400 - ₹1,800",
-                        "Action": "Fully comfortable overnight journey with guaranteed bed. Book instantly."
+                        "Action": "Fully comfortable overnight journey. Book via official state portal."
                     }
                 ]
                 
                 execution_steps = f"""
-                1. **Target Date Alignment:** For your trip on **{travel_date.strftime('%d %b %Y')}**, avoid general compartments entirely. Focus on comfort via pre-booked AC transit options.
-                2. **Option A (The Junction Quota Trick):** If direct trains to Tirupati show heavy waitlists, search for **Renigunta Junction** on Train No. 17654. Railways allocate distinct quotas to junction stations, drastically increasing your chance of securing a confirmed berth.
-                3. **Option B (AC Sleeper Bus Route):** Book a state-run (TGSRTC/APSRTC) or top-rated private AC sleeper bus leaving Hyderabad in the evening. It bypasses rail waitlists completely and drops you off fresh the next morning.
-                4. **Stay Sourcing:** Secure clean, non-surge-priced rooms at the **TTD Srinivasam Complex** or official pilgrim guest houses.
+                1. **Target Date Alignment:** For your trip on **{travel_date.strftime('%d %b %Y')}**, avoid general compartments. Rely exclusively on confirmed remote quotas and AC transport options.
+                2. **Remote Quota Trick (Train 17654):** Direct quotas to Tirupati often fill up fast. Instead, check seat availability originating or terminating via **Renigunta Junction (RU)** or **Puttur (PUT)** on [Ixigo Trains](https://www.ixigo.com/trains/17654). Railways hold dedicated pool quotas for intermediate technical junctions.
+                3. **Instant Booking Portals:** Execute live reservations directly via the official [IRCTC Portal](https://www.irctc.co.in) or check alternative live running stats on [RailYatri](https://www.railyatri.in/m/time-table/17654).
+                4. **Accommodation Backup:** Secure clean, non-surge-priced rooms at the **TTD Srinivasam Complex** near the station.
                 """
             else:
                 routes_data = [
                     {
-                        "Strategy": "Junction Split (Reserved Rail)",
-                        "Path": f"{origin} ➔ Major Divisional Hub (Reserved Seat) ➔ {destination}",
-                        "Status": "🟢 Confirmed Quota Open",
+                        "Strategy": "Junction Quota Split",
+                        "Path": f"{origin} ➔ Major Divisional Hub [IRCTC](https://www.irctc.co.in) ➔ {destination}",
+                        "Status": "🟢 Remote Quota Open",
                         "Est. Cost": f"₹{int(budget * 0.6)}",
-                        "Action": "Book ticket to intermediate junction where seat availability is higher."
+                        "Action": "Book ticket targeting intermediate junction pools where pooling availability is active."
                     },
                     {
                         "Strategy": "Overnight AC Sleeper Bus",
                         "Path": f"Verified Private/State AC Sleeper from {origin} to {destination}",
                         "Status": "🟢 Confirmed Berths Available",
                         "Est. Cost": f"₹{int(budget * 0.75)}",
-                        "Action": "Guaranteed bed with zero hassle or crowding."
+                        "Action": "Guaranteed bed with zero rush. Book instantly."
                     }
                 ]
                 execution_steps = f"""
-                1. **Target Date Alignment:** Traveling on **{travel_date.strftime('%d %b %Y')}** requires avoiding crowded unreserved compartments.
-                2. **Execution Strategy:** Use the hub-and-spoke method by booking confirmed tickets to an intermediate junction, or secure a direct AC sleeper bus for maximum comfort.
+                1. **Target Date Alignment:** Traveling on **{travel_date.strftime('%d %b %Y')}** requires avoiding crowded compartments.
+                2. **Execution Strategy:** Utilize the remote quota hub-and-spoke method via [IRCTC](https://www.irctc.co.in) by booking confirmed tickets to an intermediate junction pool, or secure a direct AC sleeper bus.
                 """
 
-            st.markdown("### 📊 Guaranteed Reserved Corridors")
+            st.markdown("### 📊 Guaranteed Reserved & Remote Quota Corridors")
             st.table(pd.DataFrame(routes_data))
             
             st.markdown("### 🛡️ Stress-Free Execution Blueprint")
@@ -141,9 +139,9 @@ with col_output:
         else:
             sections = agent_output.split("---")
             if len(sections) >= 2:
-                st.markdown("### 📊 Guaranteed Reserved Corridors")
+                st.markdown("### 📊 Alternative Transit Corridors")
                 st.markdown(sections[0].strip())
-                st.markdown("### 🛡️ Stress-Free Execution Blueprint")
+                st.markdown("### 🛡️ Emergency Execution Blueprint")
                 st.markdown(sections[1].strip())
             else:
                 st.markdown(agent_output)
